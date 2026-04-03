@@ -6,6 +6,7 @@ import * as admin from "firebase-admin";
 import {getFirestore} from "firebase-admin/firestore";
 import Parser from "rss-parser";
 import {Telegraf} from "telegraf";
+import axios from "axios";
 
 // Firebase Admin SDK 초기화
 admin.initializeApp();
@@ -17,6 +18,8 @@ const parser = new Parser();
 const CAMPUS_RSS_URL = "https://www.yeonsung.ac.kr/bbs/ko/79/rssList.do?row=10";
 const GENERAL_RSS_URL = "https://www.yeonsung.ac.kr/bbs/ko/78/rssList.do?row=10";
 const SCHOLAR_RSS_URL = "https://www.yeonsung.ac.kr/bbs/ko/77/rssList.do?row=10";
+
+
 /**
  * Escapes special characters for Telegram Markdown.
  * @param {string} text The text to escape.
@@ -49,22 +52,51 @@ type Notice = {
   contentSnippet: string;
 };
 
+// 구독자 목록 가져오기 및 텔레그램 봇 초기화
+const db = getFirestore(admin.app(), "ysu-notice-db");
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN as string);
+let chatIds: any;
+db.collection("users").get().then((snap) => {
+    chatIds = snap.docs.map((doc) => doc.data().chatId);
+});
+
+// RSS 파싱 함수
+const parseRSS = async (url: string) => {
+    const response = await axios.get(url);
+    let rawData = response.data;
+    const fixedData = rawData.replace(/&(?!(amp|lt|gt|quot|apos|#\d+);)/g, "&amp;");
+
+    try {
+        const feed = await parser.parseString(fixedData);
+        return feed;
+    } 
+    catch (err: any) {
+        logger.error(err);
+        return null;
+    }
+}
+
+// 메인 함수
 export const scheduledFunction = onSchedule({
   schedule: "*/30 * * * *",
   timeZone: "Asia/Seoul",
 }, async () => {
   try {
     // 1. RSS 피드 데이터 가져오기
-    const campus_feed = await parser.parseURL(CAMPUS_RSS_URL);
-    const general_feed = await parser.parseURL(GENERAL_RSS_URL);
-    const scholar_feed = await parser.parseURL(SCHOLAR_RSS_URL);
 
+    const campus_feed = await parseRSS(CAMPUS_RSS_URL);
+    const general_feed = await parseRSS(GENERAL_RSS_URL);
+    const scholar_feed = await parseRSS(SCHOLAR_RSS_URL);
+
+    // RSS 파싱 실패 시 오류 발생 및 함수 종료
+    if (!campus_feed || !general_feed || !scholar_feed) {
+        throw new Error("Failed to parse RSS feeds.");
+    }
+
+    // RSS 파싱 성공
     logger.info(`Fetched ${campus_feed.items.length} items from CAMPUS_RSS.`);
     logger.info(`Fetched ${general_feed.items.length} items from GENERAL_RSS.`);
     logger.info(`Fetched ${scholar_feed.items.length} items from SCHOLAR_RSS.`);
-
-    const db = getFirestore(admin.app(), "ysu-notice-db");
-    const batch = db.batch();
 
     const campusFeedItems: FeedItem[] = [];
     const generalFeedItems: FeedItem[] = [];
@@ -123,6 +155,8 @@ export const scheduledFunction = onSchedule({
     }
 
     // 3. Firestore에 이미 존재하는 문서인지 병렬로 확인
+    const batch = db.batch();
+
     const campus_snapshots = await Promise.all(campusDocRefs.map((ref) => ref.get()));
     const general_snapshots = await Promise.all(generalDocRefs.map((ref) => ref.get()));
     const scholar_snapshots = await Promise.all(scholarDocRefs.map((ref) => ref.get()));
@@ -204,11 +238,6 @@ export const scheduledFunction = onSchedule({
       logger.error("잘못된 토큰");
       return;
     }
-    
-    // 구독자 목록 가져오기
-    const bot = new Telegraf(token);
-    const usersSnap = await db.collection("users").get();
-    const chatIds = usersSnap.docs.map((doc) => doc.data().chatId);
 
     if (!chatIds.length) {
       logger.warn("구독자가 없음");
@@ -229,7 +258,7 @@ export const scheduledFunction = onSchedule({
   
       // 모든 사용자에게 메시지 전송 (병렬 처리 및 에러 무시)
       const results = await Promise.allSettled(
-        chatIds.map((id) =>
+        chatIds.map((id: string) =>
           bot.telegram.sendMessage(id, message, {parse_mode: "Markdown"})
         )
       );
@@ -250,20 +279,19 @@ export const scheduledFunction = onSchedule({
  * 텔레그램 봇의 웹훅 요청을 처리하는 HTTP 함수
  */
 export const telegramWebhook = onRequest(async (request, response) => {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
+
+  if (!process.env.TELEGRAM_BOT_TOKEN) {
     logger.error("TELEGRAM_BOT_TOKEN is not defined");
     response.sendStatus(500);
     return;
   }
 
-  const bot = new Telegraf(token);
+  const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
   // 사용자가 /start 명령을 보냈을 때 처리
   bot.start(async (ctx) => {
     const chatId = ctx.chat.id;
     try {
-      const db = getFirestore(admin.app(), "ysu-notice-db");
       // 사용자 정보를 'users' 컬렉션에 저장 (구독 처리)
       await db.collection("users").doc(chatId.toString()).set({
         chatId: chatId,

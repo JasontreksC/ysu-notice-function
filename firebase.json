@@ -7,7 +7,6 @@
   },
   "functions": [
     {
-      "source": "functions",
       "codebase": "default",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
@@ -18,9 +17,8 @@
         "*.local"
       ],
       "predeploy": [
-        "npm --prefix functions run lint",
-        "npm --prefix functions run build"
-      ]
+      ],
+      "source": "functions"
     }
   ]
 }
