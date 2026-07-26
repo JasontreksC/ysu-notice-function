@@ -76,7 +76,7 @@ const categories: {[key: number]: Category} = {
 export default {
 	fetch: withSupabase({ auth: ["secret"] }, async (req, ctx) => {
 		// 텔레그램 봇 객체
-		const bot = new Telegraf(Deno.env.get(TELEGRAM_BOT_TOKEN) as string);
+		const bot = new Telegraf(Deno.env.get("TELEGRAM_BOT_TOKEN") as string);
 
 		// 구독자 목록 가져오기
 		const { data: chatIdsData } = await ctx.supabaseAdmin.from('subscription').select('chat_id');
