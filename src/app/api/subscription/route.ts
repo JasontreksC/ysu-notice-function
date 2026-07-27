@@ -7,7 +7,8 @@ export const maxDuration = 30;
 
 /**
  * 텔레그램 봇 웹훅 — /start 시 subscription 테이블에 chat_id를 저장합니다.
- * 웹훅 URL 예: https://<project>.vercel.app/api/subscription?secret=$FUNCTION_SECRET
+ * 웹훅 URL 예: https://<project>.vercel.app/api/subscription
+ * setWebhook 시 secret_token=$FUNCTION_SECRET 으로 보호합니다.
  */
 export async function POST(request: Request) {
   if (!isAuthorized(request)) {
