@@ -1,9 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "hono",
+  "framework": "nextjs",
   "functions": {
-    "index.ts": {
+    "src/app/api/notice/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/subscription/route.ts": {
+      "maxDuration": 30
     }
   }
 }

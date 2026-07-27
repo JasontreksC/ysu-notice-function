@@ -9,7 +9,7 @@ export async function parseRSS(url: string) {
     return null;
   }
 
-  let rawData = await response.text();
+  const rawData = await response.text();
   // 잘못된 엔티티(& alone)를 교정해 XML 파싱이 깨지지 않게 함
   const fixedData = rawData.replace(/&(?!(amp|lt|gt|quot|apos|#\d+);)/g, "&amp;");
 

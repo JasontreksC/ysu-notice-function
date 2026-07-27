@@ -1,13 +1,15 @@
 import { Telegraf } from "telegraf";
 import type { Update } from "telegraf/types";
-import { isAuthorized } from "../auth.js";
-import { getSql } from "../db.js";
+import { isAuthorized } from "@/lib/auth";
+import { getSql } from "@/lib/db";
+
+export const maxDuration = 30;
 
 /**
  * 텔레그램 봇 웹훅 — /start 시 subscription 테이블에 chat_id를 저장합니다.
  * 웹훅 URL 예: https://<project>.vercel.app/api/subscription?secret=$FUNCTION_SECRET
  */
-export async function handleSubscription(request: Request): Promise<Response> {
+export async function POST(request: Request) {
   if (!isAuthorized(request)) {
     return new Response("not allowed", { status: 405 });
   }

@@ -1,19 +1,21 @@
 import { Telegraf } from "telegraf";
-import { isAuthorized } from "../auth.js";
-import { buildCategoryRssUrl } from "../categories.js";
-import { getSql } from "../db.js";
+import { isAuthorized } from "@/lib/auth";
+import { buildCategoryRssUrl } from "@/lib/categories";
+import { getSql } from "@/lib/db";
 import {
   buildNoticeLink,
   escapeMarkdown,
   extractNoticeId,
   parseRSS,
-} from "../rss.js";
+} from "@/lib/rss";
+
+export const maxDuration = 60;
 
 /**
  * RSS를 파싱해 신규 공지를 Neon에 저장하고, 구독자에게 텔레그램으로 전송합니다.
  * Authorization: Bearer $FUNCTION_SECRET 또는 ?secret= 으로 호출합니다.
  */
-export async function handleNotice(request: Request): Promise<Response> {
+export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
