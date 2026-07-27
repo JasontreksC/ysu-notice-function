@@ -1,13 +1,13 @@
 import { Telegraf } from "telegraf";
-import { isAuthorized } from "../auth";
-import { buildCategoryRssUrl } from "../categories";
-import { getSql } from "../db";
+import { isAuthorized } from "../auth.js";
+import { buildCategoryRssUrl } from "../categories.js";
+import { getSql } from "../db.js";
 import {
   buildNoticeLink,
   escapeMarkdown,
   extractNoticeId,
   parseRSS,
-} from "../rss";
+} from "../rss.js";
 
 /**
  * RSS를 파싱해 신규 공지를 Neon에 저장하고, 구독자에게 텔레그램으로 전송합니다.

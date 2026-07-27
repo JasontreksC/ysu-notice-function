@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import type { Update } from "telegraf/types";
-import { isAuthorized } from "../auth";
-import { getSql } from "../db";
+import { isAuthorized } from "../auth.js";
+import { getSql } from "../db.js";
 
 /**
  * 텔레그램 봇 웹훅 — /start 시 subscription 테이블에 chat_id를 저장합니다.

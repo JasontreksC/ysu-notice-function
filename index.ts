@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { handleNotice } from "./lib/handlers/notice";
-import { handleSubscription } from "./lib/handlers/subscription";
+import { handleNotice } from "./lib/handlers/notice.js";
+import { handleSubscription } from "./lib/handlers/subscription.js";
 
 const app = new Hono();
 
