@@ -11,7 +11,7 @@ export const maxDuration = 30;
  */
 export async function POST(request: Request) {
   if (!isAuthorized(request)) {
-    return new Response("not allowed", { status: 405 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
