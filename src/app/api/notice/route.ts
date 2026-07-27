@@ -62,7 +62,10 @@ async function handleNotice(request: Request) {
         }
 
         const existing = (await sql`
-          SELECT notice_id FROM notice WHERE notice_id = ${noticeId} LIMIT 1
+          SELECT notice_id
+          FROM notice
+          WHERE notice_id = ${noticeId} AND category_id = ${categoryId}
+          LIMIT 1
         `) as { notice_id: string | number }[];
         if (existing.length > 0) continue;
 
@@ -74,13 +77,14 @@ async function handleNotice(request: Request) {
 
         try {
           await sql`
-            INSERT INTO notice (notice_id, title, summary, published_at, author)
+            INSERT INTO notice (notice_id, title, summary, published_at, author, category_id)
             VALUES (
               ${noticeId},
               ${title},
               ${summary},
               ${publishedAt?.toISOString() ?? null},
-              ${author}
+              ${author},
+              ${categoryId}
             )
           `;
         } catch (err) {
